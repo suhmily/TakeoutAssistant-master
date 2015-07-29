@@ -24,29 +24,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.zip.GZIPInputStream;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
-import android.net.Uri;
-import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 
 import com.googlecode.tesseract.android.TessBaseAPI;
 
@@ -121,7 +108,7 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initView();
+        updateView();
     }
 
     @Override
@@ -152,7 +139,7 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         return super.onOptionsItemSelected(item);
     }
 
-    private void initView() {
+    private void updateView() {
         ListView listView = (ListView) super.findViewById(R.id.listView);
         settingAdapter();
         listView.setAdapter(simpleAdapter);
@@ -167,22 +154,31 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
                 from, to);
     }
 
-    private void initList() {
-        menuList = new ArrayList<PaperMenu>();
+//    private void create_list(){
+//        menuList = new ArrayList<PaperMenu>();
+//
+//        PaperMenu pm = new PaperMenu();
+//        pm.setRestaurantName("Little Asia");
+//        pm.setPhoneNumber("4121111111");
+//        pm.setAddress("417 Cragi St, Pittsburgh, PA 15213");
+//        pm.addToMenu("Chicken", "5");
+//        pm.addToMenu("Beef", "6");
+//        pm.addToMenu("McWrap Chicken and Bacon", "3.5");
+//        pm.addToMenu("Pepsi", "1.6");
+//        pm.addToMenu("Chicken roll", "5.5");
+//        pm.addToMenu("Fried rice", "6.5");
+//        pm.addToMenu("Gyro", "5");
+//        pm.addToMenu("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "5");
+//        menuList.add(pm);
+//
+//
+//
+//        menuList = null;
+//
+//    }
 
-        PaperMenu pm = new PaperMenu();
-        pm.setRestaurantName("Little Asia");
-        pm.setPhoneNumber("4121111111");
-        pm.setAddress("417 Cragi St, Pittsburgh, PA 15213");
-        pm.addToMenu("Chicken", "5");
-        pm.addToMenu("Beef", "6");
-        pm.addToMenu("McWrap Chicken and Bacon", "3.5");
-        pm.addToMenu("Pepsi", "1.6");
-        pm.addToMenu("Chicken roll", "5.5");
-        pm.addToMenu("Fried rice", "6.5");
-        pm.addToMenu("Gyro", "5");
-        pm.addToMenu("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "5");
-        menuList.add(pm);
+    private void initList() {
+        menuList = Database.read();
 
         list = new ArrayList<Map<String, Object>>();
         for (int i = 0; i < menuList.size(); ++i) {
@@ -194,6 +190,7 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
             map.put("list", menu.getMenuList());
             list.add(map);
         }
+
     }
 
     @Override
@@ -284,6 +281,17 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
                     path = cursor.getString(cursor.getColumnIndex(projects[0]));
                     Toast.makeText(this, "Image picked from:\n" + path, Toast.LENGTH_LONG).show();
                     cursor.close();
+                }
+            }
+
+            if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE ||
+                    requestCode == SELECT_PHOTO_ACTIVITY_REQUEST_CODE) {
+                OCR ocr = new OCR(path);
+                PaperMenu pm = ocr.getRestaurant();
+                if (pm != null) {
+                    menuList.add(pm);
+                    Database.write(menuList);
+                    updateView();
                 }
             }
         }
